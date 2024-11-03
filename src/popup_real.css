@@ -1,0 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
+.go {
+  font-family: 'Material Symbols Rounded';
+  user-select: none;
+  cursor: pointer;
+}
+
+.cms_font {
+  font-family: "Kiwi Maru", serif;
+}
+
+html,
+body {
+  width: 800px;
+  height: 550px;
+  max-height: 550px;
+  padding: 0;
+  margin: 0;
+  font-family: "Plus Jakarta Sans", sans-serif;  
+  font-weight: 500;
+}
+
+/* body {
+  background-color: rgb(36, 36, 36);
+} */
