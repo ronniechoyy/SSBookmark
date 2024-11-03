@@ -5,9 +5,18 @@ import JSONRender from "./reuse/JSONRender";
 import JSONBuilder from "./reuse/JSONBuilder";
 import Popup from "./reuse/Popup";
 import DataTableBase from "./reuse/DataTableBase";
-import { getTabs, openInNewPopup, openInNewTabNextTo } from "../libs/chrome_funcs";
+import { getActiveTab, openInNewPopup, openInNewTabNextTo } from "../libs/chrome_funcs";
+import { proxy, useSnapshot } from "valtio";
+import Tabs from "./pages/Tabs";
+import Bookmarks from "./pages/Bookmarks";
+import Settings from "./pages/Settings";
+import History from "./pages/History";
+import { AnimatePresence, motion } from "framer-motion";
 
 const Context = createContext(null);
+export const MainProxy = proxy({
+  page:'bookmark'
+})
 
 const F = {}
 
@@ -45,7 +54,7 @@ const C = {
       return (
         <div onClick={openInNewPopup} className="bg-[--ws-bg] text-[--ws-text] p-[5px] rounded-[5px] cursor-pointer">
           <div className="text-[15px] go">
-            open_in_new
+            open_in_new_down
             
           </div>
         </div>
@@ -56,7 +65,7 @@ const C = {
         return (
           <div onClick={openInNewTabNextTo} className="bg-[--ws-bg] text-[--ws-text] p-[5px] rounded-[5px] cursor-pointer">
             <div className="text-[15px] go">
-              open
+              open_in_new
             </div>
           </div>
         )
@@ -112,49 +121,55 @@ const C = {
     )
   },
   MainSectionChild:{
-    SideBar(){
+    SideBar() {
+      const { page } = useSnapshot(MainProxy);
       const tabs = [
-        { name: { "en": "Tab", "zh-TW": "分頁" }, icon: "tab" },
-        { name: { "en": "Window", "zh-TW": "視窗" }, icon: "window" },
-        { name: { "en": "Setting", "zh-TW": "設定" }, icon: "settings" },
-        { name: { "en": "Bookmark", "zh-TW": "書籤" }, icon: "bookmark" },
-        { name: { "en": "History", "zh-TW": "歷史" }, icon: "history" },
-        { name: { "en": "Note", "zh-TW": "筆記" }, icon: "note" },
-        { name: { "en": "Todo", "zh-TW": "待辦" }, icon: "list" },
-        { name: { "en": "Calendar", "zh-TW": "行事曆" }, icon: "calendar_month" },
-        { name: { "en": "Clock", "zh-TW": "時鐘" }, icon: "timer" },
-        { name: { "en": "Calculator", "zh-TW": "計算機" }, icon: "calculate" },
-        { name: { "en": "Weather", "zh-TW": "天氣" }, icon: "cloud" },
+        { name: { "en": "Tab", "zh-TW": "分頁" }, icon: "tab", value: 'tabs' },
+        { name: { "en": "Bookmark", "zh-TW": "書籤" }, icon: "bookmark", value: 'bookmark' },
+        { name: { "en": "Setting", "zh-TW": "設定" }, icon: "settings", value: 'setting' },
+        { name: { "en": "History", "zh-TW": "歷史" }, icon: "history", value: 'history' },
       ]
-      
-      return(
+
+      return (
         <div className="w-[120px] bg-[--ws-bg] text-[--ws-text] p-[5px] rounded-[10px] flex flex-col">
           <div className="p-[2px] rounded-[10px] flex-grow flex flex-col gap-[2px]">
             {tabs.map((tab, index) => {
-              const { name, icon } = tab;
-              return(
-                <div key={index} className="text-[12px]  rounded-[10px] p-[5px] flex gap-[5px] items-center">
+              const { name, icon, value } = tab;
+              return (
+                <div key={index} className="text-[12px]  rounded-[10px] p-[5px] flex gap-[5px] items-center hover:bg-[--ws-bg_hover] cursor-pointer" 
+                style={{ 
+                  backgroundColor: page === value ? 'var(--ws-bg_hover)' : 'transparent' 
+                }}
+                  onClick={() => { MainProxy.page = value }}
+                >
                   <span className="go">{icon}</span>
                   <Tran text={name} />
                 </div>
               )
             })}
           </div>
-
-          
         </div>
       )
     },
     MainContent(){
-      return(
-        <div className="flex-grow bg-[--ws-bg] text-[--ws-text] p-[5px] rounded-[10px] flex flex-col overflow-auto">
-          <div className="text-[14px]">
-            <Tran text={{ "en": "Tabs", "zh-TW": "分頁" }} />
-          </div>
-          <div className=" ">
-
-          </div>
-        </div>
+      const { page } = useSnapshot(MainProxy);
+      return (
+        <>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={page}
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -10, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="w-ful h-full flex-grow relative flex flex-col">
+              {page === 'tabs' && <Tabs />}
+              {page === 'bookmark' && <Bookmarks />}
+              {page === 'setting' && <Settings />}
+              {page === 'history' && <History />}
+            </motion.div>
+          </AnimatePresence>
+        </>
       )
     },
   }
