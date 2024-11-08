@@ -5,31 +5,27 @@ import { getBookmarks } from "../../libs/chrome_funcs";
 import { proxy, useSnapshot } from "valtio";
 import MomSaidTheVirtualListAtHome from "../reuse/MomSaidTheVirtualListAtHome";
 
-const BookmarksProxy = proxy({
-  bookmarks: []
-})
-
 function Bookmarks() {
-  const { bookmarks } = useSnapshot(BookmarksProxy);
+  const { bookmarks } = useSnapshot(MainProxy);
   
   useEffect(() => {
     console.log('Bookmarks useEffect');
     getBookmarks().then((bookmarks) => {
       console.log(bookmarks);
-      BookmarksProxy.bookmarks = bookmarks[0].children
+      MainProxy.bookmarks = bookmarks[0].children
     });
   }, []);
 
   return (
     <div className="flex-grow bg-[--ws-bg] text-[--ws-text] p-[10px] rounded-[10px] flex flex-col gap-[10px] overflow-auto">
-      <div className="text-[14px] flex gap-[5px] items-center">
+      {/* <div className="text-[14px] flex gap-[5px] items-center">
         <Tran text={{ "en": "Bookmarks", "zh-TW": "書籤" }} />
         <span className="text-[12px] bg-[--ws-bg_hover] p-[2px_8px] rounded-[7px]">{bookmarks.length}</span>
-      </div>
-      <MomSaidTheVirtualListAtHome className={'grid grid-cols-4 gap-[2px]'} inVisibleHeight="42.5px">
+      </div> */}
+      <div className={'grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-[2px] overflow-y-auto'} >
         {bookmarks.map((bookmark) => {
           return (
-            <div key={bookmark.id} className="flex items-center gap-[10px] p-[5px_10px] rounded-[5px] bg-[--ws-bg_hover] text-[--ws-text] text-[12px]">
+            <MomSaidTheVirtualListAtHome key={bookmark.id} className="flex items-center gap-[10px] p-[5px_10px] rounded-[5px] bg-[--ws-bg_hover] text-[--ws-text] text-[12px]" inVisibleHeight="42.5px">
               <div className="w-[18px] h-[18px] rounded-[5px] overflow-hidden">
                 {bookmark.favIconUrl ?
                   <img src={bookmark.favIconUrl} alt={bookmark.title} loading="lazy" />
@@ -49,11 +45,11 @@ function Bookmarks() {
                   </div>
                 </button>
               </div>
-            </div>
+            </MomSaidTheVirtualListAtHome>
           );
         }
         )}
-      </MomSaidTheVirtualListAtHome>
+      </div>
     </div>
   );
 }

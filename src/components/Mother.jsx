@@ -15,7 +15,9 @@ import { AnimatePresence, motion } from "framer-motion";
 
 const Context = createContext(null);
 export const MainProxy = proxy({
-  page:'bookmark'
+  page:'bookmark',
+  tabs: [],
+  bookmarks: [],
 })
 
 const F = {}
@@ -26,7 +28,7 @@ const C = {
     return(
       <div className="text-[15px] p-[5px]">
         <div className="flex items-center gap-[5px]">
-          <div className="flex items-center gap-[5px] flex-grow">
+          <div className="flex items-center gap-[5px]">
             <img className="bg-[#555] aspect-square h-[25px] rounded-[5px] object-fill" src="https://pbs.twimg.com/media/GYuT1QmbYAANz7a?format=jpg&name=4096x4096" alt="" />
             <div className="text-[18px] font-[700]">
               <Tran text={{ "en": "SSBookMark", "zh-TW": "截圖書籤" }} />
@@ -36,8 +38,11 @@ const C = {
             </div>
 
           </div>
-
+          <div className="flex-grow">
+            <C.MainSectionChild.SideBar />
+          </div>
           <div className="flex items-center gap-[5px]">
+            <Child.Setting />
             <Child.OpenInNewPopup />
             <Child.OpenInNewTabNextTo />
             <Child.LangSwitch />
@@ -63,7 +68,7 @@ const C = {
     OpenInNewTabNextTo() {
         
         return (
-          <div onClick={openInNewTabNextTo} className="bg-[--ws-bg] text-[--ws-text] p-[5px] rounded-[5px] cursor-pointer">
+          <div onClick={() => { openInNewTabNextTo() }} className="bg-[--ws-bg] text-[--ws-text] p-[5px] rounded-[5px] cursor-pointer">
             <div className="text-[15px] go">
               open_in_new
             </div>
@@ -109,34 +114,46 @@ const C = {
           </div>
         </div>
       )
+    },
+    Setting(){
+      return (
+        <div className="bg-[--ws-bg] text-[--ws-text] p-[5px] rounded-[5px] cursor-pointer" onClick={
+          () => MainProxy.page = 'setting'
+        }>
+          <div className="text-[15px] go">
+            settings
+          </div>
+        </div>
+      )
     }
   },
   MainSection(){
     const isOpen = useState(false);
     return(
-      <div className="p-[1px] flex-grow flex gap-[1px] bg-[--ws-bg-d] overflow-auto">
-        <C.MainSectionChild.SideBar />
+      <div className="p-[1px] flex-grow flex flex-col gap-[1px] bg-[--ws-bg-d] min-h-0">
+        {/* <C.MainSectionChild.SideBar /> */}
         <C.MainSectionChild.MainContent />
       </div>
     )
   },
   MainSectionChild:{
     SideBar() {
-      const { page } = useSnapshot(MainProxy);
-      const tabs = [
+      const { page, tabs,bookmarks } = useSnapshot(MainProxy);
+      const sideBarTabs = [
         { name: { "en": "Tab", "zh-TW": "分頁" }, icon: "tab", value: 'tabs' },
         { name: { "en": "Bookmark", "zh-TW": "書籤" }, icon: "bookmark", value: 'bookmark' },
-        { name: { "en": "Setting", "zh-TW": "設定" }, icon: "settings", value: 'setting' },
         { name: { "en": "History", "zh-TW": "歷史" }, icon: "history", value: 'history' },
+        // { name: { "en": "Setting", "zh-TW": "設定" }, icon: "settings", value: 'setting' },
       ]
-
+      /**w-[120px] */ 
       return (
-        <div className="w-[120px] bg-[--ws-bg] text-[--ws-text] p-[5px] rounded-[10px] flex flex-col">
-          <div className="p-[2px] rounded-[10px] flex-grow flex flex-col gap-[2px]">
-            {tabs.map((tab, index) => {
-              const { name, icon, value } = tab;
+        
+        <div className=" bg-[--ws-bg] text-[--ws-text] p-[5px] rounded-[10px] flex ">
+          <div className="p-[2px] rounded-[10px] flex gap-[2px] w-full">
+            {sideBarTabs.map((sideBarTab, index) => {
+              const { name, icon, value } = sideBarTab;
               return (
-                <div key={index} className="text-[12px]  rounded-[10px] p-[5px] flex gap-[5px] items-center hover:bg-[--ws-bg_hover] cursor-pointer" 
+                <div key={index} className="text-[12px] w-full rounded-[10px] p-[5px] flex gap-[5px] justify-center items-center hover:bg-[--ws-bg_hover] cursor-pointer" 
                 style={{ 
                   backgroundColor: page === value ? 'var(--ws-bg_hover)' : 'transparent' 
                 }}
@@ -144,6 +161,8 @@ const C = {
                 >
                   <span className="go">{icon}</span>
                   <Tran text={name} />
+                  {value === 'tabs' && <span className="text-[12px] bg-[--ws-bg_hover] p-[2px_8px] rounded-[7px]">{tabs.length}</span>}
+                  {value === 'bookmark' && <span className="text-[12px] bg-[--ws-bg_hover] p-[2px_8px] rounded-[7px]">{bookmarks.length}</span>}
                 </div>
               )
             })}
@@ -162,11 +181,11 @@ const C = {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -10, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="w-ful h-full flex-grow relative flex flex-col">
+              className="flex-grow relative flex flex-col min-h-0">
               {page === 'tabs' && <Tabs />}
               {page === 'bookmark' && <Bookmarks />}
-              {page === 'setting' && <Settings />}
               {page === 'history' && <History />}
+              {page === 'setting' && <Settings />}
             </motion.div>
           </AnimatePresence>
         </>

@@ -8,7 +8,7 @@ const functions = {
         resolve(tabs[0]);
       });
     });
-
+    console.log('activeTab', url)
     const newTab = await chrome.tabs.create({
       url: url,
       index: activeTab.index + 1,

@@ -5,30 +5,31 @@ import { proxy, useSnapshot } from "valtio";
 import { captureVisibleTab, getAllTabs, getActiveTab, goSpecificTab, openInNewTabNextTo, resizeImage } from "../../libs/chrome_funcs";
 import MomSaidTheVirtualListAtHome from "../reuse/MomSaidTheVirtualListAtHome";
 
-const TabsProxy = proxy({
-  tabs: []
-})
 
 function Tabs() {
-  const { tabs } = useSnapshot(TabsProxy);
+  const { tabs } = useSnapshot(MainProxy);
   useEffect(() => {
     console.log('Tabs useEffect');
     getAllTabs().then((tabs) => {
       console.log(tabs);
       //put in different window
-      TabsProxy.tabs = tabs
+      MainProxy.tabs = tabs
     });
   }, []);
   return (
-    <div className="flex-grow bg-[--ws-bg] text-[--ws-text] p-[10px] rounded-[10px] flex flex-col gap-[10px] overflow-auto">
-      <div className="text-[14px] flex gap-[5px] items-center">
+    <div className="flex-grow bg-[--ws-bg] text-[--ws-text] p-[10px] rounded-[10px] flex flex-col gap-[10px] min-h-0 ">
+      {/* <div className="text-[14px] flex gap-[5px] items-center">
         <Tran text={{ "en": "Tabs", "zh-TW": "分頁" }} /> 
         <span className="text-[12px] bg-[--ws-bg_hover] p-[2px_8px] rounded-[7px]">{tabs.length}</span>
-      </div>
-      <MomSaidTheVirtualListAtHome className={'grid grid-cols-4 gap-[2px]'} inVisibleHeight="42.5px">
+      </div> */}
+      <div className={`grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-[2px] overflow-y-auto
+      [&>*]:flex [&>*]:items-center [&>*]:gap-[10px] [&>*]:p-[5px_10px] [&>*]:rounded-[5px] [&>*]:bg-[--ws-bg_hover] [&>*]:text-[--ws-text] [&>*]:text-[12px]
+      `} >
         {tabs.map((tab) => {
           return (
-            <div key={tab.id} className="flex items-center gap-[10px] p-[5px_10px] rounded-[5px] bg-[--ws-bg_hover] text-[--ws-text] text-[12px]">
+            <MomSaidTheVirtualListAtHome key={tab.id} inVisibleHeight="42.5px"
+            // className="flex items-center gap-[10px] p-[5px_10px] rounded-[5px] bg-[--ws-bg_hover] text-[--ws-text] text-[12px]"
+            >
               <div className="w-[18px] h-[18px] rounded-[5px] overflow-hidden">
                 {tab.favIconUrl ?
                   <img src={tab.favIconUrl} alt={tab.title} loading="lazy" />
@@ -62,11 +63,11 @@ function Tabs() {
                   </div>
                 </button>
               </div>
-            </div>
+            </MomSaidTheVirtualListAtHome>
           );
         }
         )}
-      </MomSaidTheVirtualListAtHome>
+      </div>
     </div>
   );
 }
