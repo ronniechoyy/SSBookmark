@@ -98,7 +98,45 @@ const functions = {
         resolve(bookmarks)
       });
     })
-  }
+  },
+  bookmarksTreeNavify(bookmarks, bookmarkNavPath) {
+    // if (bookmarkNavPath.length === 0) {
+    //   // console.log('bookmarkNavPath.length === 0', current)
+    //   return bookmarks[0];
+    // }
+
+    // Handle empty path or empty bookmarks
+    if (!bookmarkNavPath.length || !bookmarks || !bookmarks.length) {
+      return bookmarks;
+    }
+
+    // Start with the root array
+    let current = { children: bookmarks }; // Take the first item since Chrome bookmarks tree starts with a root node
+
+    
+    console.log('bookmarkNavPath', bookmarks, bookmarkNavPath)
+    // Navigate through the path
+    for (let i = 0; i < bookmarkNavPath.length; i++) {
+      if (!current || !current.children) {
+        console.warn('Navigation path broken at:', bookmarkNavPath[i]);
+        return null;
+      }
+
+      current = !current?.children ? 
+        current.find(child => child.id === bookmarkNavPath[i])
+       :
+      current.children.find(child => child.id === bookmarkNavPath[i]);
+
+      if (!current) {
+        console.warn('Could not find bookmark with id:', bookmarkNavPath[i]);
+        return null;
+      }
+    }
+
+   
+
+    return current;
+  },
 }
 
 
@@ -110,5 +148,6 @@ export const {
   goSpecificTab,
   captureVisibleTab,
   resizeImage,
-  getBookmarks
+  getBookmarks,
+  bookmarksTreeNavify
 } = functions

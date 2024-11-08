@@ -18,6 +18,8 @@ export const MainProxy = proxy({
   page:'bookmark',
   tabs: [],
   bookmarks: [],
+  // /書籤列/Folder1/MYBookmark/DAY1 = [folderid, folderid, folderid, folderid]
+  bookmarkNavPath: ["0"],
 })
 
 const F = {}
