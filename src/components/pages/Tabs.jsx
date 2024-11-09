@@ -1,19 +1,18 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import Tran from "../../libs/translater";
-import { MainProxy } from "../Mother";
+import { MainContext } from "../Mother";
 import { proxy, useSnapshot } from "valtio";
 import { captureVisibleTab, getAllTabs, getActiveTab, goSpecificTab, openInNewTabNextTo, resizeImage } from "../../libs/chrome_funcs";
 import MomSaidTheVirtualListAtHome from "../reuse/MomSaidTheVirtualListAtHome";
 
 
 function Tabs() {
-  const { tabs } = useSnapshot(MainProxy);
+  // const { tabs } = useSnapshot(MainProxy);
+  const { tabs } = useContext(MainContext)
   useEffect(() => {
     console.log('Tabs useEffect');
-    getAllTabs().then((tabs) => {
-      console.log(tabs);
-      //put in different window
-      MainProxy.tabs = tabs
+    getAllTabs().then((_tabs) => {
+      tabs[1](_tabs);
     });
   }, []);
   return (
@@ -25,7 +24,7 @@ function Tabs() {
       <div className={`grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-[2px] overflow-y-auto
       [&>*]:flex [&>*]:items-center [&>*]:gap-[10px] [&>*]:p-[5px_10px] [&>*]:rounded-[5px] [&>*]:bg-[--ws-bg_hover] [&>*]:text-[--ws-text] [&>*]:text-[12px]
       `} >
-        {tabs.map((tab) => {
+        {tabs[0].map((tab) => {
           return (
             <MomSaidTheVirtualListAtHome key={tab.id} inVisibleHeight="42.5px"
             // className="flex items-center gap-[10px] p-[5px_10px] rounded-[5px] bg-[--ws-bg_hover] text-[--ws-text] text-[12px]"

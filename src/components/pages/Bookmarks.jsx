@@ -1,19 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Tran from "../../libs/translater";
-import { MainProxy } from "../Mother";
-import { bookmarksTreeNavify, externalDataHandler, getBookmarks } from "../../libs/chrome_funcs";
-import { proxy, useSnapshot } from "valtio";
+import { MainContext } from "../Mother";
+import { bookmarksFunc, bookmarksTreeNavify, externalDataHandler, getBookmarks } from "../../libs/chrome_funcs";
+import { proxy, snapshot, useSnapshot } from "valtio";
 import MomSaidTheVirtualListAtHome from "../reuse/MomSaidTheVirtualListAtHome";
 
 const BookmarkC = {
   Navbar() {
-    const { bookmarks, bookmarkNavPath } = useSnapshot(MainProxy);
+    const { bookmarks, bookmarkNavPath } = useContext(MainContext);
 
     const folderPath = () => {
       let _folderPath = [/*{ children: bookmarks, title: "Root" }*/];
-      let current = { children: bookmarks };
-      for (let i = 0; i < bookmarkNavPath.length; i++) {
-        current = current.children.find(child => child.id === bookmarkNavPath[i]);
+      let current = { children: bookmarks[0] };
+      for (let i = 0; i < bookmarkNavPath[0].length; i++) {
+        current = current.children.find(child => child.id === bookmarkNavPath[0][i]);
         if (current.title === "") {
           current = { ...current };
           current.title = "ROOT";
@@ -31,10 +31,10 @@ const BookmarkC = {
           <div className="text-[15px] go">
             bookmark
           </div>
-          {bookmarks.length > 0 && bookmarkNavPath.map((folderId, index) => {
+          {bookmarks[0].length > 0 && bookmarkNavPath[0].map((folderId, index) => {
 
             function goFolder() {
-              MainProxy.bookmarkNavPath = bookmarkNavPath.slice(0, index + 1);
+              bookmarkNavPath[1](bookmarkNavPath[0].slice(0, index + 1));
             }
 
             // console.log("folderPath", folderPath());
@@ -60,13 +60,14 @@ const BookmarkC = {
   },
   Block({ bookmark }) {
     //MomSaidTheVirtualListAtHome
-    const { bookmarkNavPath } = useSnapshot(MainProxy);
+    const { bookmarkNavPath } = useContext(MainContext);
     const isFolder = !bookmark.url;
     // console.log(bookmark);
     return(
       <MomSaidTheVirtualListAtHome className="flex flex-col rounded-[5px] overflow-clip bg-[--ws-bg_hover] text-[--ws-text] text-[12px] group " inVisibleHeight="151px">
         <div className=" aspect-[1920/1080] w-full overflow-clip bg-[--ws-bg-d] relative " onClick={()=>{
-          MainProxy.bookmarkNavPath.push(bookmark.id);
+          // MainProxy.bookmarkNavPath.push(bookmark.id);
+          bookmarkNavPath[1]([...bookmarkNavPath[0], bookmark.id]);
         }}>
 
           {!isFolder &&
@@ -114,25 +115,26 @@ const BookmarkC = {
 const BC = BookmarkC;
 
 function Bookmarks() {
-  const { bookmarks, bookmarkNavPath } = useSnapshot(MainProxy);
+  // const { bookmarks, bookmarkNavPath } = useSnapshot(MainProxy);
+  const { bookmarks, bookmarkNavPath } = useContext(MainContext);
   const bookmarkListRef = useRef(null);
-  const sortedBookmarks = bookmarks.length > 0 ? [...bookmarksTreeNavify(bookmarks, bookmarkNavPath).children].sort((a, b) => {
+  const sortedBookmarks = bookmarks[0].length > 0 ? [...bookmarksTreeNavify(bookmarks[0], bookmarkNavPath[0]).children].sort((a, b) => {
     return b.dateAdded - a.dateAdded;
   }):[];
   
   useEffect(() => {
     console.log('Bookmarks useEffect');
-    getBookmarks().then((bookmarks) => {
-      console.log(JSON.parse(JSON.stringify(bookmarks)));
-      MainProxy.bookmarks = bookmarks
-    });
+    bookmarksFunc.loadNativeBookmarks(bookmarks);
+    bookmarksFunc.restoreNav(bookmarkNavPath);
   }, []);
 
   useEffect(() => {
     if (bookmarkListRef.current) {
       bookmarkListRef.current.scrollTop = 0;
     }
-  }, [bookmarkNavPath]);
+    bookmarksFunc.storeNav(bookmarkNavPath);
+    
+  }, [bookmarkNavPath[0]]);
 
   return (
     <div className="flex-grow bg-[--ws-bg] text-[--ws-text] p-[10px] rounded-[10px] flex flex-col gap-[10px] min-h-0 ">

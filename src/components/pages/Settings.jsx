@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Tran from "../../libs/translater";
-import { MainProxy } from "../Mother";
+import { MainContext } from "../Mother";
 
 function Settings() {
   return (

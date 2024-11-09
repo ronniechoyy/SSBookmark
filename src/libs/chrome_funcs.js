@@ -190,8 +190,8 @@ const functions = {
           // lang: 'en',
           // theme: 'light',
           bookmarkNavPath: {
-            default: ['0', '2'],
-            lastActive: ['0', '2'],
+            default: ['0', '3'],
+            lastActive: ['0', '3'],
           }
         },
         bookmarksExtendInfo: {
@@ -217,6 +217,42 @@ const functions = {
       }
 
     },
+    async getExtensionStorage() {
+      return new Promise((resolve, reject) => {
+        chrome.storage.local.get(null, function (data) {
+          resolve(data)
+        });
+      })
+    },
+    async setLastActiveBookmarkNavPath(path) {
+      const data = await chrome.storage.local.get(['settings']);
+      const newSettings = {
+        ...data.settings,
+        bookmarkNavPath: {
+          ...data.settings.bookmarkNavPath,
+          lastActive: path
+        }
+      }
+      await chrome.storage.local.set({
+        settings: newSettings
+      });
+    }
+  },
+  bookmarksFunc:{
+    loadNativeBookmarks(bookmarksState){
+      getBookmarks().then((bookmarks) => {
+        console.log(JSON.parse(JSON.stringify(bookmarks)));
+        bookmarksState[1](bookmarks)
+      });
+    },
+    storeNav(bookmarkNavPath){
+      externalDataHandler.setLastActiveBookmarkNavPath(bookmarkNavPath[0]);
+    },
+    restoreNav(bookmarkNavPathState){
+      externalDataHandler.getExtensionStorage().then((data) => {
+        bookmarkNavPathState[1](data.settings.bookmarkNavPath.lastActive)
+      });
+    }
   }
     
 }
@@ -233,7 +269,8 @@ export const {
   resizeImageWorker,
   getBookmarks,
   bookmarksTreeNavify,
-  externalDataHandler
+  externalDataHandler,
+  bookmarksFunc
 } = functions
 
 // const chains = {
