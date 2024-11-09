@@ -5,7 +5,7 @@ import JSONRender from "./reuse/JSONRender";
 import JSONBuilder from "./reuse/JSONBuilder";
 import Popup from "./reuse/Popup";
 import DataTableBase from "./reuse/DataTableBase";
-import { getActiveTab, openInNewPopup, openInNewTabNextTo } from "../libs/chrome_funcs";
+import { externalDataHandler, getActiveTab, openInNewPopup, openInNewTabNextTo } from "../libs/chrome_funcs";
 import { proxy, useSnapshot } from "valtio";
 import Tabs from "./pages/Tabs";
 import Bookmarks from "./pages/Bookmarks";
@@ -203,6 +203,7 @@ function Mother(){
   const langState = useState("en");
 
   useEffect(() => {
+    externalDataHandler.initExtensionStorage();
     if (!localStorage.getItem('lang')) {
       localStorage.setItem('lang', 'zh-TW')
       langState[1]('zh-TW')

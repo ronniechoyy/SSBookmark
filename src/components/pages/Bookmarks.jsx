@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Tran from "../../libs/translater";
 import { MainProxy } from "../Mother";
-import { bookmarksTreeNavify, getBookmarks } from "../../libs/chrome_funcs";
+import { bookmarksTreeNavify, externalDataHandler, getBookmarks } from "../../libs/chrome_funcs";
 import { proxy, useSnapshot } from "valtio";
 import MomSaidTheVirtualListAtHome from "../reuse/MomSaidTheVirtualListAtHome";
 

@@ -50,11 +50,10 @@ function Tabs() {
                 </button>
                 <button onClick={async() => {
                   await goSpecificTab(tab.id);
-                  const img = await captureVisibleTab(tab.windowId);
-                  const thumbnail = await resizeImage(img, 0.4);
+                  const { fullsize, thumbnail } = await captureVisibleTab(tab.windowId);
                   //open data url in new tab
-                  openInNewTabNextTo(img)
-                  // openInNewTabNextTo(thumbnail)
+                  openInNewTabNextTo(fullsize)
+                  openInNewTabNextTo(thumbnail)
                   
                   
                 }} className=" aspect-square p-[5px] rounded-[5px] cursor-pointer">
