@@ -2,7 +2,7 @@ import Tran from "./translater";
 
 function Time_ago({ New_time, Old_time }) {
   let Time_between = New_time - Old_time;
-  
+
   const Minisecond_ago = 1;
   const Second_ago = 1000;
   const Min_ago = 1000 * 60;

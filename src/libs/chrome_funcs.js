@@ -194,9 +194,9 @@ const functions = {
             lastActive: ['0', '3'],
           }
         },
-        bookmarksExtendInfo: {
-          // ['bookmarkId']: { capture: { thumb, fullsize } }
-        },
+        // bookmarksExtendInfo: {
+        //   // ['bookmarkId']: { capture: { thumb, fullsize } }
+        // },
         groups: [
           // {
           //   name: 'Group 1',
@@ -236,6 +236,192 @@ const functions = {
       await chrome.storage.local.set({
         settings: newSettings
       });
+    },
+    async addBookmarkExtendInfo(bookmarkId, extendInfo) {
+      await chrome.storage.local.set({
+        [`bookmarksExtendInfo.${bookmarkId}`]: extendInfo
+      });
+    },
+    async getBookmarkExtendInfo(bookmarkId) {
+      return await chrome.storage.local.get(`bookmarksExtendInfo.${bookmarkId}`)
+    },
+    async getBookmarksExtendInfoBatch(bookmarkIds) {
+      // const data = await chrome.storage.local.get(['bookmarksExtendInfo']);
+      // return bookmarkIds.map(id => data.bookmarksExtendInfo[id]);
+      return new Promise((resolve, reject) => {
+        chrome.storage.local.get(bookmarkIds.map(id => `bookmarksExtendInfo.${id}`), function (data) {
+          resolve(bookmarkIds.map(id => data[`bookmarksExtendInfo.${id}`]));
+        });
+      });
+    }
+  },
+  extensionDB: {
+    dbName: 'SSStorage',
+    version: 1,
+    stores: ['extensionData', 'bookmarksExtendInfo'], // Define stores
+    db: null,
+    async convertOldDB() {
+      indexedDB.open('ExtensionStorage', 1).onsuccess = (event) => {
+        const db = event.target.result;
+        const transaction = db.transaction(['extensionData'], 'readonly');
+        const store = transaction.objectStore('extensionData')
+        //get key "bookmarksExtendInfo"
+        const request = store.getAll();
+
+        request.onerror = () => console.error(request.error);
+        request.onsuccess = () => {
+          const data = request.result[0];
+          console.log('data', data);
+          // const { bookmarksExtendInfo } = data;
+          this.init().then(async () => {
+            await this.setAll('bookmarksExtendInfo', data);
+          });
+          
+        };
+      };
+    },
+    async init() {
+      if (this.db) return this.db;
+      // await this.convertOldDB();
+
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(this.dbName, this.version);
+
+        request.onerror = () => reject(request.error);
+
+        request.onsuccess = () => {
+          this.db = request.result;
+          resolve(this.db);
+        };
+
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          // Create all stores
+          this.stores.forEach(storeName => {
+            if (!db.objectStoreNames.contains(storeName)) {
+              db.createObjectStore(storeName);
+            }
+          });
+        };
+      });
+    },
+
+    async initExtensionStorage() {
+      const externalData = {
+        settings: {
+          bookmarkNavPath: {
+            default: ['0', '3'],
+            lastActive: ['0', '3'],
+          }
+        },
+        groups: [],
+        favicons: {}
+      };
+
+      await this.init();
+      const existingData = await this.getAll('extensionData');
+      if (!existingData || Object.keys(existingData).length === 0) {
+        await this.setAll('extensionData', externalData);
+      }
+    },
+
+    async setAll(storeName, data) {
+      await this.init();
+      return new Promise((resolve, reject) => {
+        const transaction = this.db.transaction([storeName], 'readwrite');
+        const store = transaction.objectStore(storeName);
+
+        for (const [key, value] of Object.entries(data)) {
+          store.put(value, key);
+        }
+
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+      });
+    },
+
+    async getAll(storeName) {
+      await this.init();
+      return new Promise((resolve, reject) => {
+        const transaction = this.db.transaction([storeName], 'readonly');
+        const store = transaction.objectStore(storeName);
+        const request = store.getAll();
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const result = {};
+          store.getAllKeys().onsuccess = (e) => {
+            const keys = e.target.result;
+            keys.forEach((key, index) => {
+              result[key] = request.result[index];
+            });
+            resolve(result);
+          };
+        };
+      });
+    },
+
+    async get(storeName, key) {
+      await this.init();
+      return new Promise((resolve, reject) => {
+        const transaction = this.db.transaction([storeName], 'readonly');
+        const store = transaction.objectStore(storeName);
+        const request = store.get(key);
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+      });
+    },
+
+    async set(storeName, key, value) {
+      await this.init();
+      return new Promise((resolve, reject) => {
+        const transaction = this.db.transaction([storeName], 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const request = store.put(value, key);
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+      });
+    },
+
+    async setLastActiveBookmarkNavPath(path) {
+      const settings = await this.get('extensionData', 'settings') || {};
+      const newSettings = {
+        ...settings,
+        bookmarkNavPath: {
+          ...settings.bookmarkNavPath,
+          lastActive: path
+        }
+      };
+      await this.set('extensionData', 'settings', newSettings);
+    },
+
+    async addBookmarkExtendInfo(bookmarkId, extendInfo) {
+      await this.set('bookmarksExtendInfo', bookmarkId, extendInfo);
+    },
+
+    async getBookmarkExtendInfo(bookmarkId) {
+      const info = await this.get('bookmarksExtendInfo', bookmarkId);
+      return { [`bookmarksExtendInfo.${bookmarkId}`]: info };
+    },
+
+    async getBookmarksExtendInfoBatch(bookmarkIds) {
+      return Promise.all(bookmarkIds.map(id =>
+        this.get('bookmarksExtendInfo', id)
+      ));
+    },
+
+    async clear(storeName) {
+      await this.init();
+      return new Promise((resolve, reject) => {
+        const transaction = this.db.transaction([storeName], 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const request = store.clear();
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve();
+      });
     }
   },
   bookmarksFunc:{
@@ -246,11 +432,15 @@ const functions = {
       });
     },
     storeNav(bookmarkNavPath){
-      externalDataHandler.setLastActiveBookmarkNavPath(bookmarkNavPath[0]);
+      // externalDataHandler.setLastActiveBookmarkNavPath(bookmarkNavPath[0]);
+      extensionDB.setLastActiveBookmarkNavPath(bookmarkNavPath[0]);
     },
     restoreNav(bookmarkNavPathState){
-      externalDataHandler.getExtensionStorage().then((data) => {
-        bookmarkNavPathState[1](data.settings.bookmarkNavPath.lastActive)
+      // externalDataHandler.getExtensionStorage().then((data) => {
+      //   bookmarkNavPathState[1](data.settings.bookmarkNavPath.lastActive)
+      // });
+      extensionDB.get('extensionData','settings').then((data) => {
+        bookmarkNavPathState[1](data.bookmarkNavPath.lastActive)
       });
     }
   }
@@ -270,6 +460,7 @@ export const {
   getBookmarks,
   bookmarksTreeNavify,
   externalDataHandler,
+  extensionDB,
   bookmarksFunc
 } = functions
 

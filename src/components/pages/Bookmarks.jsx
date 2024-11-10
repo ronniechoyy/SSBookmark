@@ -1,9 +1,11 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import Tran from "../../libs/translater";
 import { MainContext } from "../Mother";
-import { bookmarksFunc, bookmarksTreeNavify, externalDataHandler, getBookmarks } from "../../libs/chrome_funcs";
+import { bookmarksFunc, bookmarksTreeNavify, externalDataHandler ,extensionDB, getBookmarks, openInNewTabNextTo } from "../../libs/chrome_funcs";
 import { proxy, snapshot, useSnapshot } from "valtio";
 import MomSaidTheVirtualListAtHome from "../reuse/MomSaidTheVirtualListAtHome";
+import Time_ago from "../../libs/time_ago";
+import Popup from "../reuse/Popup";
 
 const BookmarkC = {
   Navbar() {
@@ -60,19 +62,80 @@ const BookmarkC = {
   },
   Block({ bookmark }) {
     //MomSaidTheVirtualListAtHome
-    const { bookmarkNavPath } = useContext(MainContext);
+    const { bookmarkNavPath,modalBookmark } = useContext(MainContext);
+    const ZoomImage = useState(false);
     const isFolder = !bookmark.url;
-    // console.log(bookmark);
+    // const favicons = bookmark?.url?.startsWith('http') ? bookmark.url.split('/')[2] + 'favicon.ico' : '';
+    //https://www.google.com/favicons.ico
+    // const favicons = bookmark?.url?.startsWith('http') ? `https://${bookmark.url.split('/')[2]}/favicon.ico` : null;
+    const favicons = null
+
+    const BookmarkExtendInfo = useState(null);
+    const thumbnail = BookmarkExtendInfo[0]?.capture?.thumbnail ?? null;
+    const fullsize = BookmarkExtendInfo[0]?.capture?.fullsize ?? 'https://pbs.twimg.com/media/GYuT1QmbYAANz7a?format=jpg&name=4096x4096';
+
+    useEffect(() => {
+      console.log('BookmarkExtendInfo useEffect');
+      extensionDB.getBookmarkExtendInfo(bookmark.id).then((info) => {
+        console.log('info', info);
+        // console.log('info', Object.values(info)[0]);
+        BookmarkExtendInfo[1](Object.values(info)[0]);
+      });
+    }, []);
+    
+
+
+    function NavToBookmark() {
+      bookmarkNavPath[1]([...bookmarkNavPath[0], bookmark.id]);
+    }
+
+    function openModal(e) {
+      e.stopPropagation();
+      modalBookmark[1](bookmark);
+    }
+
+    function openUrlInNewTab(e) {
+      e.stopPropagation();
+      openInNewTabNextTo(bookmark.url);
+    }
+
+    function openFullsize() {
+      ZoomImage[1](true);
+    }
+    
     return(
-      <MomSaidTheVirtualListAtHome className="flex flex-col rounded-[5px] overflow-clip bg-[--ws-bg_hover] text-[--ws-text] text-[12px] group " inVisibleHeight="151px">
-        <div className=" aspect-[1920/1080] w-full overflow-clip bg-[--ws-bg-d] relative " onClick={()=>{
-          // MainProxy.bookmarkNavPath.push(bookmark.id);
-          bookmarkNavPath[1]([...bookmarkNavPath[0], bookmark.id]);
+      <>
+        <div className=" aspect-[1920/1080] w-full overflow-clip bg-[--ws-bg-d] relative " onClick={() => {
+          if (isFolder) {
+            NavToBookmark();
+          }else{
+            // openModal();
+          }
         }}>
 
           {!isFolder &&
             <>
-              <img className=" absolute inset-0 top-1/2 left-1/2 translate-x-[-50%] translate-y-[-50%] object-cover group-hover:scale-[1.05] duration-[0.2s]" src="https://pbs.twimg.com/media/GYuT1QmbYAANz7a?format=jpg&name=4096x4096" alt="" />
+            {thumbnail &&
+            <img className=" absolute inset-0 top-1/2 left-1/2 translate-x-[-50%] translate-y-[-50%] object-cover group-hover:scale-[1.05] duration-[0.2s] "
+              src={thumbnail} onClick={openFullsize} alt="" />}
+            {!thumbnail &&
+            <div className="flex items-center justify-center w-full h-full opacity-[0.1] group-hover:opacity-[1] group-hover:scale-[1.25] duration-[0.2s]">
+              <div className="text-[50px] go ">
+                public
+              </div>
+            </div>}
+            <div className="absolute top-1 right-1  text-[10px]  flex-col gap-[5px]  group-hover:flex hidden">
+              <button onClick={openUrlInNewTab} className=" aspect-square w-[30px] h-[30px] p-[5px] rounded-full bg-[#00000080] cursor-pointer grid place-content-center">
+                <div className="text-[15px] go text-[--ws-bg]">
+                  open_in_new
+                </div>
+              </button>
+              <button onClick={openModal} className=" aspect-square w-[30px] h-[30px] p-[5px] rounded-full bg-[#00000080] cursor-pointer grid place-content-center">
+                <div className="text-[15px] go text-[--ws-bg]">
+                  more_vert
+                </div>
+              </button>
+            </div>
             </>
           }
           {isFolder &&
@@ -83,13 +146,19 @@ const BookmarkC = {
             </div>
           }
 
+          <div className="absolute bottom-0 right-0 p-[5px] text-[10px]" style={{
+            textShadow: '#fff 1px 1px 2px , #fff -1px -1px 2px , #fff -1px 1px 2px , #fff 1px -1px 2px',
+          }}>
+            <Time_ago New_time={new Date().getTime()} Old_time={new Date(bookmark.dateAdded).getTime()} />
+          </div>
+
         </div>
-        <div className="flex items-center gap-[10px] p-[5px_10px]">
+        <div className="flex items-center gap-[10px] p-[5px_10px] h-full">
           <div className="w-[18px] h-[18px] rounded-[5px] overflow-hidden">
             {!isFolder ?
               <>
-                {bookmark.favIconUrl && <img src={bookmark.favIconUrl} alt={bookmark.title} loading="lazy" />}
-                {!bookmark.favIconUrl && <div className="text-[15px] go">public</div>}
+                {favicons && <img src={favicons} alt={bookmark.title} loading="lazy" />}
+                {!favicons && <div className="text-[15px] go">public</div>}
               </>
               :
               <div className="text-[15px] go">
@@ -97,18 +166,45 @@ const BookmarkC = {
               </div>
             }
           </div>
-          <div className="flex-grow w-[50px] ellipsis line-clamp-1" title={bookmark.title}>
-            {bookmark.title}
+          <div className="flex-grow w-[50px] flex flex-col">
+            <div className=" ellipsis line-clamp-1" title={bookmark.title}>
+              {bookmark.title}
+            </div>
+            <div className=" ellipsis text-[8px] line-clamp-1" title={bookmark.url}>
+              {bookmark.url}
+            </div>
           </div>
-          <div className="flex gap-[5px]">
+          {/* <div className="flex gap-[5px]">
             <button onClick={() => { }} className=" aspect-square p-[5px] rounded-[5px] cursor-pointer">
               <div className="text-[15px] go">
                 more_vert
               </div>
             </button>
-          </div>
+          </div> */}
         </div>
-      </MomSaidTheVirtualListAtHome>
+        <Popup isOpen={ZoomImage[0]} onClose={() => { ZoomImage[1](false) }}>
+          <div className=" w-full overflow-clip bg-[--ws-bg-d] relative" onClick={() => { ZoomImage[1](false) }}>
+            <img src={fullsize} alt="" className="w-full h-full object-contain min-h-0" />
+          </div>
+        </Popup>
+      </>
+    )
+  },
+  PassiveThumbnail({ bookmark }) {
+    const BookmarkExtendInfo = useState(null);
+    const thumbnail = BookmarkExtendInfo[0]?.capture?.thumbnail ?? 'https://pbs.twimg.com/media/GYuT1QmbYAANz7a?format=jpg&name=4096x4096';
+
+    useEffect(() => {
+      extensionDB.getBookmarkExtendInfo(bookmark.id).then((info) => {
+        
+        console.log('info', Object.values(info)[0]);
+        BookmarkExtendInfo[1](Object.values(info)[0]);
+      });
+    }, []);
+
+    return (
+      <img className=" absolute inset-0 top-1/2 left-1/2 translate-x-[-50%] translate-y-[-50%] object-cover group-hover:scale-[1.05] duration-[0.2s]"
+        src={thumbnail} alt="" />
     )
   }
 }
@@ -143,7 +239,9 @@ function Bookmarks() {
         {sortedBookmarks.map((bookmark) => {
           // console.log(bookmark);
           return (
-            <BC.Block key={bookmark.id} bookmark={bookmark} />
+            <MomSaidTheVirtualListAtHome key={bookmark.id} className="flex flex-col rounded-[5px] overflow-clip bg-[--ws-bg_hover] text-[--ws-text] text-[12px] group " inVisibleHeight="151px">
+              <BC.Block bookmark={bookmark} />
+            </MomSaidTheVirtualListAtHome>
             // <div className="text-[10px]">{bookmark.title}</div>
           );
         }

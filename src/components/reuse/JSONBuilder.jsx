@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import MomSaidTheVirtualListAtHome from './MomSaidTheVirtualListAtHome';
 
+const localISOString = ({ date }) => {
+  const _date = new Date(date);
+  return new Date(_date.getTime() - (_date.getTimezoneOffset() * 60000)).toISOString().slice(0, -1);
+}
+
 const JSONBuilder = ({
   value = null,
   setValue = () => { },
@@ -138,6 +143,32 @@ const JSONBuilder = ({
     // if (val === null) {
     //   return <div>null</div>;
     // }
+    //date and time
+    if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
+
+      return (
+        <div className='flex gap-2 [&>*]:border-[1px] [&>*]:border-[#00000010] [&>*]:rounded-[10px] [&>*]:p-[0px_4px] text-[12px]'>
+          <input
+            className='hover:bg-[#00000005] bg-[--cms-bg_hover]'
+            type='datetime-local'
+            value={localISOString({ date: val })}
+            onChange={(e) => {
+              const newDate = new Date(e.target.value);
+              const utcISOString = newDate.toISOString();
+              changeValue(path, utcISOString);
+            }}
+            style={{ width: '250px' }}
+            readOnly={readOnly}
+          />
+          {!readOnly &&
+            <div className='flex gap-2 [&>*]:border-[1px] [&>*]:border-gray-500 [&>*]:rounded-[25px] [&>*]:p-[0px_4px] text-[12px]'>
+              <button className='go ' onClick={() => duplicateValue(path)}>content_copy</button>
+              <button className='go ' onClick={() => deleteValue(path)}>delete</button>
+            </div>}
+        </div>
+      );
+
+    }
     if (typeof val === 'string' || typeof val === 'number' || val === null) {
       return (
         <div className='flex gap-2 [&>*]:border-[1px] [&>*]:border-[#00000010] [&>*]:rounded-[10px] [&>*]:p-[0px_4px] text-[12px]'>
@@ -149,10 +180,10 @@ const JSONBuilder = ({
             readOnly={readOnly}
           />
           {!readOnly &&
-          <div className='flex gap-2 [&>*]:border-[1px] [&>*]:border-gray-500 [&>*]:rounded-[25px] [&>*]:p-[0px_4px] text-[12px]'>
-            <button className='go ' onClick={() => duplicateValue(path)}>content_copy</button>
-            <button className='go ' onClick={() => deleteValue(path)}>delete</button>
-          </div>}
+            <div className='flex gap-2 [&>*]:border-[1px] [&>*]:border-gray-500 [&>*]:rounded-[25px] [&>*]:p-[0px_4px] text-[12px]'>
+              <button className='go ' onClick={() => duplicateValue(path)}>content_copy</button>
+              <button className='go ' onClick={() => deleteValue(path)}>delete</button>
+            </div>}
         </div>
       );
     }
@@ -170,10 +201,10 @@ const JSONBuilder = ({
             <option value="false">false</option>
           </select>
           {!readOnly &&
-          <div className='flex gap-2 [&>*]:border-[1px] [&>*]:border-gray-500 [&>*]:rounded-[25px] [&>*]:p-[0px_4px] text-[12px]'>
-            <button className='go ' onClick={() => duplicateValue(path)}>content_copy</button>
-            <button className='go ' onClick={() => deleteValue(path)}>delete</button>
-          </div>}
+            <div className='flex gap-2 [&>*]:border-[1px] [&>*]:border-gray-500 [&>*]:rounded-[25px] [&>*]:p-[0px_4px] text-[12px]'>
+              <button className='go ' onClick={() => duplicateValue(path)}>content_copy</button>
+              <button className='go ' onClick={() => deleteValue(path)}>delete</button>
+            </div>}
         </div>
       );
     }
@@ -187,30 +218,30 @@ const JSONBuilder = ({
             borderRadius: '10px',
           }}>
           {!readOnly &&
-          <div className='flex gap-[5px] group'>
-            <div>{'['}</div>
-            {/* <button className='go ' onClick={() => toggleOpen(path)}>
+            <div className='flex gap-[5px] group'>
+              <div>{'['}</div>
+              {/* <button className='go ' onClick={() => toggleOpen(path)}>
               {isOpen(path) ? 'keyboard_arrow_down' : 'keyboard_arrow_right'}
             </button> */}
-            <div className='go '>
-              arrow_right
-            </div>
-            
-            <div className={`gap-2 hidden group-hover:flex [&>*]:border-[1px] [&>*]:border-gray-500 [&>*]:rounded-[25px] [&>*]:p-[0px_4px] text-[12px]`}>
-              <button className='go ' onClick={() => addValue([...path, val.length], '')}>text_fields</button>
-              <button className='go ' onClick={() => addValue([...path, val.length], 0)}>numbers</button>
-              <button className='go ' onClick={() => addValue([...path, val.length], true)}>contrast</button>
-              <button className='go ' onClick={() => addValue([...path, val.length], [])}>data_array</button>
-              <button className='go ' onClick={() => addValue([...path, val.length], {})}>data_object</button>
-              <button className='go ' onClick={() => duplicateValue(path)}>content_copy</button>
-              <button className='go ' onClick={() => deleteValue(path)}>delete</button>
-            </div>
-          </div>}
+              <div className='go '>
+                arrow_right
+              </div>
+
+              <div className={`gap-2 hidden group-hover:flex [&>*]:border-[1px] [&>*]:border-gray-500 [&>*]:rounded-[25px] [&>*]:p-[0px_4px] text-[12px]`}>
+                <button className='go ' onClick={() => addValue([...path, val.length], '')}>text_fields</button>
+                <button className='go ' onClick={() => addValue([...path, val.length], 0)}>numbers</button>
+                <button className='go ' onClick={() => addValue([...path, val.length], true)}>contrast</button>
+                <button className='go ' onClick={() => addValue([...path, val.length], [])}>data_array</button>
+                <button className='go ' onClick={() => addValue([...path, val.length], {})}>data_object</button>
+                <button className='go ' onClick={() => duplicateValue(path)}>content_copy</button>
+                <button className='go ' onClick={() => deleteValue(path)}>delete</button>
+              </div>
+            </div>}
 
           <div className='flex flex-col gap-[5px] p-[5px_0px]'>
             {isOpen(path) && val.map((item, index) => (
               <MomSaidTheVirtualListAtHome key={index} inVisibleHeight='20px' style={{ marginLeft: '20px' }} className='flex flex-col gap-2'>
-              {/* <div key={index} style={{ marginLeft: '20px' }} className='flex flex-col gap-2'> */}
+                {/* <div key={index} style={{ marginLeft: '20px' }} className='flex flex-col gap-2'> */}
                 {(item instanceof Object || Array.isArray(item)) &&
                   <div className='flex gap-[2px] cursor-pointer max-w-[350px] border-[1px] border-[#00000010] rounded-[10px] p-[0px_4px] text-[12px]' onClick={() => toggleExpand([...path, index])}>
                     <div className={`max-w-[350px] overflow-hidden whitespace-nowrap ${isExpanded([...path, index]) ? '' : 'overflow-ellipsis'}`}>
@@ -230,12 +261,12 @@ const JSONBuilder = ({
 
               {renderValue(item, [...path, index])}
               */}
-              {/* </div> */}
+                {/* </div> */}
               </MomSaidTheVirtualListAtHome>
             ))}
           </div>
           {!readOnly &&
-          <div className=' text-start'>{']'}</div>}
+            <div className=' text-start'>{']'}</div>}
         </div>
       );
     }
@@ -248,34 +279,34 @@ const JSONBuilder = ({
             borderRadius: '10px',
           }}>
           {!readOnly &&
-          <div className='flex gap-[5px] group'>
-            <div>{'{'}</div>
-            {/* <button className='go ' onClick={() => toggleOpen(path)}>
+            <div className='flex gap-[5px] group'>
+              <div>{'{'}</div>
+              {/* <button className='go ' onClick={() => toggleOpen(path)}>
               {isOpen(path) ? 'keyboard_arrow_down' : 'keyboard_arrow_right'}
             </button> */}
-            <div className='go '>
-              arrow_right
-            </div>
-            
-            <div className='gap-2 hidden group-hover:flex [&>*]:border-[1px] [&>*]:border-gray-500 [&>*]:rounded-[25px] [&>*]:p-[0px_4px] text-[12px]'>
-              <button className='go ' onClick={() => addValue([...path, `newKey${Object.keys(val).length}`], '')}>
-                text_fields
-              </button>
-              <button className='go ' onClick={() => addValue([...path, `newKey${Object.keys(val).length}`], 0)}>
-                numbers
-              </button>
-              <button className='go ' onClick={() => addValue([...path, `newKey${Object.keys(val).length}`], true)}>
-                contrast
-              </button>
-              <button className='go ' onClick={() => addValue([...path, `newKey${Object.keys(val).length}`], [])}>
-                data_array
-              </button>
-              <button className='go ' onClick={() => addValue([...path, `newKey${Object.keys(val).length}`], {})}>
-                data_object
-              </button>
-              <button className='go ' onClick={() => duplicateValue(path)}>content_copy</button>
-              <button className='go ' onClick={() => deleteValue(path)}>delete</button>
-            </div>
+              <div className='go '>
+                arrow_right
+              </div>
+
+              <div className='gap-2 hidden group-hover:flex [&>*]:border-[1px] [&>*]:border-gray-500 [&>*]:rounded-[25px] [&>*]:p-[0px_4px] text-[12px]'>
+                <button className='go ' onClick={() => addValue([...path, `newKey${Object.keys(val).length}`], '')}>
+                  text_fields
+                </button>
+                <button className='go ' onClick={() => addValue([...path, `newKey${Object.keys(val).length}`], 0)}>
+                  numbers
+                </button>
+                <button className='go ' onClick={() => addValue([...path, `newKey${Object.keys(val).length}`], true)}>
+                  contrast
+                </button>
+                <button className='go ' onClick={() => addValue([...path, `newKey${Object.keys(val).length}`], [])}>
+                  data_array
+                </button>
+                <button className='go ' onClick={() => addValue([...path, `newKey${Object.keys(val).length}`], {})}>
+                  data_object
+                </button>
+                <button className='go ' onClick={() => duplicateValue(path)}>content_copy</button>
+                <button className='go ' onClick={() => deleteValue(path)}>delete</button>
+              </div>
             </div>}
           {isOpen(path) && Object.entries(val).map(([key, value]) => (
             <div key={key} style={{ marginLeft: '20px' }}
@@ -326,7 +357,7 @@ const JSONBuilder = ({
             </div>
           ))}
           {!readOnly &&
-          <div className=' text-start'>{'}'}</div>}
+            <div className=' text-start'>{'}'}</div>}
         </div>
       );
     }

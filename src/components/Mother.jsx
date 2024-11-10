@@ -5,7 +5,7 @@ import JSONRender from "./reuse/JSONRender";
 import JSONBuilder from "./reuse/JSONBuilder";
 import Popup from "./reuse/Popup";
 import DataTableBase from "./reuse/DataTableBase";
-import { externalDataHandler, getActiveTab, openInNewPopup, openInNewTabNextTo } from "../libs/chrome_funcs";
+import { externalDataHandler, extensionDB, getActiveTab, openInNewPopup, openInNewTabNextTo } from "../libs/chrome_funcs";
 import { proxy, useSnapshot } from "valtio";
 import Tabs from "./pages/Tabs";
 import Bookmarks from "./pages/Bookmarks";
@@ -15,13 +15,6 @@ import { AnimatePresence, motion } from "framer-motion";
 
 /**@type {React.Context<ReturnType<typeof usePage>>}*/
 export const MainContext = createContext(null);
-// export const MainProxy = proxy({
-//   page:'bookmark',
-//   tabs: [],
-//   bookmarks: [],
-//   // /書籤列/Folder1/MYBookmark/DAY1 = [folderid, folderid, folderid, folderid]
-//   bookmarkNavPath: ["0"],
-// })
 
 export function usePage(){
   const TABS = [
@@ -37,10 +30,11 @@ export function usePage(){
     tabs: useState([]),
     bookmarks: useState([]),
     bookmarkNavPath: useState(["0"]),
+    modalBookmark: useState(null),
   }
 
   useEffect(() => {
-    externalDataHandler.initExtensionStorage();
+    extensionDB.initExtensionStorage();
     if (!localStorage.getItem('lang')) {
       localStorage.setItem('lang', 'zh-TW')
       state.langState[1]('zh-TW')
@@ -198,7 +192,6 @@ const C = {
       )
     },
     MainContent(){
-      // const { page } = useSnapshot(MainProxy);
       const { page } = useContext(MainContext);
       return (
         <>
@@ -219,6 +212,53 @@ const C = {
         </>
       )
     },
+  },
+  DetailModal(){
+    const { modalBookmark } = useContext(MainContext);
+    const BookmarkExtendInfo = useState(null);
+    const ZoomImage = useState(false);
+    const fullsize = BookmarkExtendInfo[0]?.capture?.fullsize ?? 'https://pbs.twimg.com/media/GYuT1QmbYAANz7a?format=jpg&name=4096x4096';
+
+    useEffect(() => {
+      extensionDB.getBookmarkExtendInfo(modalBookmark[0]?.id).then((info) => {
+
+        console.log('info', Object.values(info)[0]);
+        BookmarkExtendInfo[1](Object.values(info)[0]);
+      });
+    }, [modalBookmark[0]]);
+
+    const isOpen = modalBookmark[0] !== null;
+    const onClose = () => { modalBookmark[1](null) }
+    return (
+      <Popup isOpen={isOpen} onClose={onClose}>
+        <div className="w-[800px] max-w-[80%] max-h-[90%] bg-[--ws-bg] text-[--ws-text] rounded-[25px] shadow-sm overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between p-[15px_20px]">
+            <div className="text-[20px] font-[700]">
+              <Tran text={{ "en": "Detail", "zh-TW": "詳細" }} />
+            </div>
+            <div onClick={onClose} className="cursor-pointer">
+              <div className="text-[20px] go aspect-square min-h-full h-[30px] rounded-full hover:bg-[--ws-bg_hover] grid place-content-center">
+                close
+              </div>
+            </div>
+          </div>
+          <div className="scrollbar flex flex-col gap-[15px] text-[12px] p-[0px_20px_20px_20px] overflow-auto ">
+            <div className=" w-full overflow-clip bg-[--ws-bg-d] relative rounded-[15px] " onClick={() => { ZoomImage[1](true) }}>
+              <img src={fullsize} alt="" className="w-full h-full object-contain min-h-0" />
+            </div>
+            <h2 className="text-xl mb-4">
+              {modalBookmark[0] && modalBookmark[0].title}
+            </h2>
+            <JSONBuilder value={modalBookmark[0]} readOnly />
+          </div >
+        </div >
+        <Popup isOpen={ZoomImage[0]} onClose={() => { ZoomImage[1](false) }}>
+          <div className=" w-full overflow-clip bg-[--ws-bg-d] relative" onClick={() => { ZoomImage[1](false) }}>
+            <img src={fullsize} alt="" className="w-full h-full object-contain min-h-0" />
+          </div>
+        </Popup>
+      </Popup>
+    )
   }
 }
 
@@ -231,6 +271,7 @@ function Mother(){
         <div className="text-[--ws-text] text-[25px] bg-[--ws-bg] absolute inset-0 flex flex-col">
           <C.Header />
           <C.MainSection />
+          <C.DetailModal />
         </div>
       </MainContext.Provider>
     </LangContext.Provider>
