@@ -9,6 +9,7 @@ browser.runtime.onInstalled.addListener((details) => {
 
 // Keep track of recently created bookmarks
 let recentBookmarks = [];
+let createdManyBookmarks = false;
 let processingTimer = null;
 
 chrome.bookmarks.onCreated.addListener(async (id, bookmark) => {
@@ -22,6 +23,11 @@ chrome.bookmarks.onCreated.addListener(async (id, bookmark) => {
 
   // Set new timer to process bookmarks
   processingTimer = setTimeout(async () => {
+    if (recentBookmarks.length > 1) {
+      createdManyBookmarks = true;
+    } else {
+      createdManyBookmarks = false;
+    }
     try {
       // Process all accumulated bookmarks
       for (const { id, bookmark } of recentBookmarks) {
@@ -33,7 +39,7 @@ chrome.bookmarks.onCreated.addListener(async (id, bookmark) => {
           // Capture the tab
           await chrome.tabs.update(tab.id, { active: true });
           // Small delay to ensure tab is active and rendered
-          await new Promise(resolve => setTimeout(resolve, 300));
+          await new Promise(resolve => setTimeout(resolve, createdManyBookmarks ? 500 : 100));
 
           const { fullsize, thumbnail } = await captureVisibleTab(tab.windowId, false, true);
           await extensionDB.addBookmarkExtendInfo(id, {
@@ -47,7 +53,7 @@ chrome.bookmarks.onCreated.addListener(async (id, bookmark) => {
       // Clear the recent bookmarks array
       recentBookmarks = [];
     }
-  }, 50); // Wait 500ms to collect all bookmarks from the batch
+  }, 100); // Wait 500ms to collect all bookmarks from the batch
 });
 
 chrome.bookmarks.onRemoved.addListener((id, removeInfo) => {
