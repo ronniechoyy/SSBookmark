@@ -57,29 +57,35 @@ const functions = {
     });
   },
   async captureVisibleTab(windowId = null, fullScreen = false, inWorker = false) {
-    return new Promise((resolve, reject) => {
-      if (fullScreen) {
-        //trigger fullscreen before capture
-        chrome.windows.update(windowId, { state: "fullscreen" }, () => {
-          setTimeout(() => {
-            chrome.tabs.captureVisibleTab(windowId, { format: "jpeg", quality: 100 }, async (dataUrl) => {
-              //trigger fullscreen after capture
-              chrome.windows.update(windowId, { state: "maximized" });
-              const thumbnail = inWorker ? await resizeImageWorker(dataUrl, 0.4) : await resizeImage(dataUrl, 0.4);
-              resolve({ fullsize: dataUrl, thumbnail })
-            });
-          }, 1000)
-        });
-      }
-      else {
-        chrome.tabs.captureVisibleTab(windowId, { format: "jpeg", quality: 100 }, async (dataUrl) => {
-          console.log('inWorker', inWorker)
-          const thumbnail = inWorker ? await resizeImageWorker(dataUrl, 0.4) : await resizeImage(dataUrl, 0.4);
-          resolve({ fullsize: dataUrl, thumbnail })
-        }
-        );
-      }
-    })
+    function updateWindow(windowId, updateInfo) {
+      return new Promise((resolve) => {
+        chrome.windows.update(windowId, updateInfo, () => resolve());
+      });
+    }
+
+    function captureTab(windowId, options) {
+      return new Promise((resolve) => {
+        chrome.tabs.captureVisibleTab(windowId, options, (dataUrl) => resolve(dataUrl));
+      });
+    }
+
+    if (fullScreen) {
+      await updateWindow(windowId, { state: "fullscreen" });
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for fullscreen to take effect
+      const dataUrl = await captureTab(windowId, { format: "jpeg", quality: 100 });
+      await updateWindow(windowId, { state: "maximized" });
+      const thumbnail = inWorker
+        ? await resizeImageWorker(dataUrl, 0.4)
+        : await resizeImage(dataUrl, 0.4);
+      return { fullsize: dataUrl, thumbnail };
+    } else {
+      const dataUrl = await captureTab(windowId, { format: "jpeg", quality: 100 });
+      console.log('inWorker', inWorker);
+      const thumbnail = inWorker
+        ? await resizeImageWorker(dataUrl, 0.4)
+        : await resizeImage(dataUrl, 0.4);
+      return { fullsize: dataUrl, thumbnail };
+    }
   },
   async resizeImage(dataUrl, ratio = 1) {
     return new Promise((resolve, reject) => {

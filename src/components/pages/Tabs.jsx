@@ -17,14 +17,51 @@ function Tabs() {
   }, []);
   return (
     <div className="flex-grow bg-[--ws-bg] text-[--ws-text] p-[10px] rounded-[10px] flex flex-col gap-[10px] min-h-0 ">
-      {/* <div className="text-[14px] flex gap-[5px] items-center">
-        <Tran text={{ "en": "Tabs", "zh-TW": "分頁" }} /> 
-        <span className="text-[12px] bg-[--ws-bg_hover] p-[2px_8px] rounded-[7px]">{tabs.length}</span>
-      </div> */}
-      <div className={`grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-[2px] overflow-y-auto
-      [&>*]:flex [&>*]:items-center [&>*]:gap-[10px] [&>*]:p-[5px_10px] [&>*]:rounded-[5px] [&>*]:bg-[--ws-bg_hover] [&>*]:text-[--ws-text] [&>*]:text-[12px]
-      `} >
-        {tabs[0].map((tab) => {
+      <div className={`flex flex-col gap-[2px] overflow-y-auto relative`} >
+
+        {tabs[0].reduce((acc, tab) => {
+          if (acc.length === 0) {
+            acc.push([tab]);
+          } else {
+            if (acc[acc.length - 1][0].windowId === tab.windowId) {
+              acc[acc.length - 1].push(tab);
+            } else {
+              acc.push([tab]);
+            }
+          }
+          return acc;
+        }, []).map((windowTabs, index) => {
+          return (
+            <WindowGroup key={windowTabs[0].windowId} windowTabs={windowTabs} index={index} />
+          )
+        })}
+
+      </div>
+    </div>
+  );
+}
+
+function WindowGroup({ windowTabs, index }) {
+  const tabOpen = useState(true);
+
+  return (
+    <>
+      <div className="text-[14px] flex gap-[5px] items-center !bg-[--ws-text] !text-[--ws-bg] p-[5px_10px] rounded-[5px] sticky top-0 left-0" onClick={() => { tabOpen[1](prev => !prev) }}>
+        <Tran text={{ "en": "Window", "zh-TW": "視窗" }} />
+        <span className="text-[12px] bg-[--ws-text] text-[--ws-bg] p-[2px_8px] rounded-[7px]">{index + 1}</span>
+        <span className="text-[12px] bg-[--ws-bg] text-[--ws-text] p-[2px_8px] rounded-[7px]">{windowTabs.length}</span>
+        <div className="flex-grow"></div>
+        <span className="text-[12px] bg-[--ws-text] text-[--ws-bg] p-[2px_8px] rounded-[7px] go">
+          {tabOpen[0] ? "expand_less" : "expand_more"}
+        </span>
+      </div>
+      <div className={`grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-[2px]
+                [&>*]:flex [&>*]:items-center [&>*]:gap-[10px] [&>*]:p-[5px_10px] [&>*]:rounded-[5px] [&>*]:bg-[--ws-bg_hover] [&>*]:text-[--ws-text] [&>*]:text-[12px]
+                `} >
+        {tabOpen[0] && windowTabs.map((tab, i) => {
+          if (i === 0) {
+            console.log('tab', tab);
+          }
           return (
             <MomSaidTheVirtualListAtHome key={tab.id} inVisibleHeight="42.5px"
             // className="flex items-center gap-[10px] p-[5px_10px] rounded-[5px] bg-[--ws-bg_hover] text-[--ws-text] text-[12px]"
@@ -47,14 +84,14 @@ function Tabs() {
                     open_in_new
                   </div>
                 </button>
-                <button onClick={async() => {
+                <button onClick={async () => {
                   await goSpecificTab(tab.id);
                   const { fullsize, thumbnail } = await captureVisibleTab(tab.windowId);
                   //open data url in new tab
                   openInNewTabNextTo(fullsize)
                   openInNewTabNextTo(thumbnail)
-                  
-                  
+
+
                 }} className=" aspect-square p-[5px] rounded-[5px] cursor-pointer">
                   <div className="text-[15px] go">
                     save_alt
@@ -66,8 +103,9 @@ function Tabs() {
         }
         )}
       </div>
-    </div>
-  );
+    </>
+  )
+
 }
 
 export default Tabs;
